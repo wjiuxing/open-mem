@@ -33,6 +33,12 @@ export const TABLES = {
 /** Single migration that creates the complete database schema. */
 export const MIGRATIONS: Migration[] = [
 	{
+		version: 2,
+		name: "add-message-id-column",
+		up: `ALTER TABLE observations ADD COLUMN message_id TEXT;
+			CREATE INDEX IF NOT EXISTS idx_observations_message_id ON observations(message_id);`,
+	},
+	{
 		version: 1,
 		name: "create-schema",
 		up: `

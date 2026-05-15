@@ -115,6 +115,25 @@ export class PendingMessageRepository {
 		return result.length;
 	}
 
+	/**
+	 * Delete all pending and failed messages for a given call ID.
+	 * Used for cleanup when a specific tool call is undone — removes
+	 * orphaned items that would otherwise be compressed into observations
+	 * tied to an undone message.
+	 * Never deletes items in "processing" or "completed" status.
+	 * Returns the number of items deleted.
+	 */
+	deleteByCallId(callId: string): number {
+		const result = this.db.all<{ id: string }>(
+			`DELETE FROM pending_messages
+			 WHERE call_id = ?
+			 AND status IN ('pending', 'failed')
+			 RETURNING id`,
+			[callId],
+		);
+		return result.length;
+	}
+
 	// ---------------------------------------------------------------------------
 	// Row Mapping
 	// ---------------------------------------------------------------------------

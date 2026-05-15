@@ -44,6 +44,7 @@ interface ObservationRow {
 	discovery_tokens: number;
 	embedding: string | null;
 	importance: number;
+	message_id: string | null;
 	revision_of: string | null;
 	deleted_at: string | null;
 	superseded_by: string | null;
@@ -95,8 +96,8 @@ export class ObservationRepository {
 			`INSERT INTO observations
 				(id, session_id, scope, type, title, subtitle, facts, narrative,
 				 concepts, files_read, files_modified, raw_tool_output,
-				 tool_name, created_at, token_count, discovery_tokens, importance, revision_of, deleted_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				 tool_name, created_at, token_count, discovery_tokens, importance, message_id, revision_of, deleted_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				id,
 				data.sessionId,
@@ -115,6 +116,7 @@ export class ObservationRepository {
 				data.tokenCount,
 				discoveryTokens,
 				importance,
+				data.messageId ?? null,
 				null,
 				null,
 			],
@@ -139,8 +141,8 @@ export class ObservationRepository {
 			`INSERT INTO observations
 				(id, session_id, scope, type, title, subtitle, facts, narrative,
 				 concepts, files_read, files_modified, raw_tool_output,
-				 tool_name, created_at, token_count, discovery_tokens, importance, revision_of, deleted_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				 tool_name, created_at, token_count, discovery_tokens, importance, message_id, revision_of, deleted_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				data.id,
 				data.sessionId,
@@ -159,6 +161,7 @@ export class ObservationRepository {
 				data.tokenCount,
 				data.discoveryTokens ?? 0,
 				data.importance ?? 3,
+				data.messageId ?? null,
 				data.revisionOf ?? null,
 				data.deletedAt ?? null,
 			],
@@ -174,6 +177,15 @@ export class ObservationRepository {
 		const row = this.db.get<ObservationRow>(
 			"SELECT * FROM observations WHERE id = ? AND superseded_by IS NULL AND deleted_at IS NULL",
 			[id],
+		);
+		return row ? this.mapRow(row) : null;
+	}
+
+	/** Find an observation by its message ID. */
+	findByMessageId(messageId: string): Observation | null {
+		const row = this.db.get<ObservationRow>(
+			"SELECT * FROM observations WHERE message_id = ? AND superseded_by IS NULL AND deleted_at IS NULL",
+			[messageId],
 		);
 		return row ? this.mapRow(row) : null;
 	}
@@ -768,6 +780,7 @@ export class ObservationRepository {
 			tokenCount: row.token_count,
 			discoveryTokens: row.discovery_tokens ?? 0,
 			importance: row.importance ?? 3,
+			messageId: row.message_id ?? null,
 			revisionOf: row.revision_of ?? null,
 			deletedAt: row.deleted_at ?? null,
 			supersededBy: row.superseded_by ?? null,

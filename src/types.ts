@@ -34,6 +34,7 @@ export interface Observation {
 	tokenCount: number; // Estimated tokens for budget management
 	discoveryTokens: number; // Original input size in tokens (for ROI tracking)
 	importance: number; // AI-assigned importance score (1-5, default 3)
+	messageId?: string | null;
 	revisionOf?: string | null;
 	deletedAt?: string | null;
 	supersededBy?: string | null;

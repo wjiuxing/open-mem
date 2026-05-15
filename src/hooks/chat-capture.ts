@@ -56,6 +56,7 @@ export interface ChatCaptureInput {
 	text: string;
 	agent?: string;
 	sensitivePatterns?: string[];
+	messageId?: string;
 }
 
 /** Shared capture path for chat messages across platforms. */
@@ -68,10 +69,17 @@ export function persistChatMessage(input: ChatCaptureInput): boolean {
 		text,
 		agent,
 		sensitivePatterns = [],
+		messageId,
 	} = input;
 
 	// User messages have agent=undefined; assistant messages have agent set to model name
 	if (agent !== undefined && agent !== "user") return false;
+
+	// If messageID is provided, skip duplicate (prevents re-creating after /undo re-fire)
+	if (messageId) {
+		const existing = observations.findByMessageId(messageId);
+		if (existing) return false;
+	}
 
 	// Strip private blocks and redact sensitive content before any processing
 	const processedText = redactSensitive(stripPrivateBlocks(text), sensitivePatterns);
@@ -105,6 +113,7 @@ export function persistChatMessage(input: ChatCaptureInput): boolean {
 		tokenCount: Math.ceil(narrative.length / 4),
 		discoveryTokens: 0,
 		importance: 3,
+		messageId: messageId ?? null,
 	});
 	return true;
 }
@@ -134,7 +143,7 @@ export function createChatCaptureHook(
 		output: { message: unknown; parts: unknown[] },
 	): Promise<void> => {
 		try {
-			const { sessionID, agent } = input;
+			const { sessionID, agent, messageID } = input;
 
 			// User messages have agent=undefined; assistant messages have agent set to model name
 			if (agent !== undefined && agent !== "user") return;
@@ -148,6 +157,7 @@ export function createChatCaptureHook(
 				text,
 				agent,
 				sensitivePatterns,
+				messageId: messageID,
 			});
 		} catch (error) {
 			console.error("[open-mem] Chat capture error:", error);
